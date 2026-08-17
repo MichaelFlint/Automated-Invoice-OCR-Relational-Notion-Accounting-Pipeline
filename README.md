@@ -1,18 +1,19 @@
-# 📄 Automated Invoice OCR & Relational Notion Accounting Pipeline
+# 📄 Automated Invoice OCR & Relational Notion Accounting System (n8n + OpenAI + Notion)
 
-A production-grade, AI-driven automation workflow built in **n8n** that intercepts incoming email attachments, performs structured OCR data extraction using **OpenAI (GPT-4o)**, and maps invoice headers and line items into a relational **Notion** accounting database. Equipped with defensive data validation and a global error handling sub-workflow.
+![n8n](https://img.shields.io/badge/n8n-FF6D5A?logo=n8n&logoColor=white) ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-000000?logo=notion&logoColor=white)
 
----
+An automated end-to-end system designed to extract structured data from PDF invoices using AI (OpenAI) and record relational parent/child accounting entries directly into Notion.
 
-## 🌟 Key Features
+## 🎯 Business Problem
 
-* **Automated Ingestion:** Listens for inbound PDF invoice attachments via Gmail and securely archives them on Google Drive.
-* **Structured AI Extraction (LLM):** Enforces strict JSON Schema outputs using OpenAI to extract invoice metadata (vendor, NIP/tax ID, dates, totals, currency) and line items without regex limitations.
-* **Relational Notion Data Model:** Creates a parent invoice record in Notion, then splits and loops through individual line items (`Split Out` & `Loop Over Items`) to populate child line-item records.
-* **Mathematical Guardrails:** Validates financial integrity ($Net + VAT = Gross$) and normalizes currency codes (PLN, EUR, USD) prior to database insertion.
-* **Production-Grade Error Resilience:**
-  * Node-level **Exponential Backoff / Retry-on-Fail** policy across external APIs (OpenAI, Google Drive, Notion) to absorb transient network issues and rate limits.
-  * Dedicated **Global Error Trigger Sub-Workflow** that intercepts runtime failures and sends formatted HTML alert emails with direct n8n execution log links.
+Manual processing of incoming PDF invoices causes data entry bottlenecks, leads to human errors in amounts or VAT values, and fails to maintain structured line-item records for financial audits.
+
+**The Solution:** This workflow automates the entire accounting intake pipeline in real-time:
+1. **Ingest & Archive:** Automatically catches PDF attachments via Gmail and backs them up to Google Drive.
+2. **AI Text Extraction:** Parses raw document text and extracts key metadata and line items using OpenAI (`gpt-4o-mini`).
+3. **Parent Record Creation:** Generates a main invoice entry in the primary Notion Invoices database.
+4. **Relational Line Items Loop:** Splits line items array and creates child records linked directly to the parent invoice.
+5. **Error Handler Sub-Workflow:** Catches runtime exceptions and triggers a formatted HTML email alert with direct n8n log links.
 
 ---
 
@@ -23,48 +24,53 @@ A production-grade, AI-driven automation workflow built in **n8n** that intercep
 <img width="2071" height="490" alt="image" src="https://github.com/user-attachments/assets/908c0d95-c6e5-4eb2-b057-e7b0d964e348" />
 
 
+---
 
+## 🛠 Tech Stack
 
-## 🛡️ Reliability & Error Handling Sub-System
-
-To prevent pipeline silent failures and data corruption, the workflow implements a dual-layer fault-tolerance model:
-
-1. **Rate Limit & Transient Error Mitigation:**
-   * **Notion API:** Retries 3 times with 2000ms delay during batch line-item loops to prevent 429 Rate Limit errors.
-   * **OpenAI API:** Configured with exponential backoff against API degradation or timeout spikes.
-2. **Global Failure Alerting:**
-   * Linked to a decoupled **Error Trigger Sub-Workflow**.
-   * Unhandled runtime exceptions trigger an automated HTML email notification displaying the failing node name, timestamp, stack trace/error payload, and a direct URL to inspect the execution logs in n8n.
+* **Orchestration:** n8n (Gmail Trigger, Google Drive Node, Loop Node, Code Node, Sub-Workflow)
+* **AI Engine:** OpenAI API (`gpt-4o-mini`) using Structured Outputs / JSON Schema
+* **Database / Accounting:** Notion API (Relational Databases: Parent Invoices & Child Line Items)
+* **Logic & Transformation:** JavaScript (`Code Node` in n8n for data sanitization & error parsing)
 
 ---
 
-## 🛠️ Tech Stack & Integrations
+## ✨ Key Features & Production Readiness
 
-* **Orchestration:** n8n (Sub-workflows, Loop nodes, Error Trigger, Binary Stream Handling)
-* **AI & Extraction:** OpenAI API (`gpt-4o-mini`, Structured Outputs / JSON Schema)
-* **Database & CRM:** Notion API (Relational Database Properties, Batch Entries)
-* **Storage & Messaging:** Gmail API, Google Drive API, HTML/SMTP Alerting
-* **Logic & Parsing:** Custom JavaScript (`Code Node` data sanitization, type-casting, math checks)
+* **Zero Hallucination Parsing:** Enforces strict OpenAI JSON Schemas to extract invoice names, vendors, totals, currencies, and item arrays reliably.
+* **Relational Record Linking:** Dynamically connects individual line-item sub-records to their parent invoice entry inside Notion.
+* **Data Sanitization & Math Integrity:** Verifies $Gross = Net + VAT$ calculations and normalizes currency codes (PLN, EUR, USD) prior to database insertion.
+* **Global Error Handling:** Intercepts execution failures with a dedicated `Error Trigger` sub-workflow, dispatching styled HTML alert emails with stack traces.
 
+---
 
+## ⚙️ How to Run / Setup
 
-🚀 Setup & Installation
-Import Workflow: Load the workflow.json into your n8n instance.
+### Prerequisites
 
-Configure Credentials:
+* A running instance of n8n (Cloud or Self-Hosted).
+* An active OpenAI API key.
+* Connected Google Drive and Gmail accounts.
+* A Notion integration token with access to parent and child databases.
 
-Gmail OAuth2
+### Setup Steps
 
-Google Drive OAuth2
+1. Download the `workflow.json` and `error-subworkflow.json` files from this repository.
+2. In your n8n canvas, navigate to **Workflows ➔ Import from File** and select the JSON files.
+3. Configure your API Credentials:
+   * **OpenAI API Key**
+   * **Gmail OAuth2 & Google Drive OAuth2**
+   * **Notion Integration Token**
+4. Update the **Database ID** parameters in the Notion nodes with your database IDs.
+5. In Main Workflow Settings, set **Error Workflow** to point to the imported Error Trigger Sub-Workflow.
+6. Toggle the workflow to **Active** (top right corner).
 
-OpenAI API Key
+---
 
-Notion API Integration Token
+## 👤 Author
 
-Set Up Notion Database:
+**Michał Krzemiński**  
+AI & Automation Developer
 
-Create a parent Invoices database (Title, Number, Vendor, Total Amount, Currency).
-
-Create a child Line Items database linked via Relation to the parent database.
-
-Attach Error Handler: Set the Error Workflow in Workflow Settings to point to your deployed Error Trigger pipeline.
+* **LinkedIn:** https://www.linkedin.com/in/micha%C5%82-krzemi%C5%84ski-2052b6428/
+* **GitHub:** https://github.com/MichaelFlint
