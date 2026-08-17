@@ -1,0 +1,2 @@
+# Automated-Invoice-OCR-Relational-Notion-Accounting-Pipeline
+A production-grade, AI-driven automation workflow built in **n8n** that intercepts incoming email attachments, performs structured OCR data extraction using **OpenAI (GPT-4o)**, and maps invoice headers and line items into a relational **Notion** accounting database. Equipped with defensive data validation and a global error handling sub-workflow.
